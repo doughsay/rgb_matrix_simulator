@@ -3,6 +3,10 @@ defmodule RGBMatrix.LED do
   Describes a physical LED location.
   """
 
+  @type t :: %__MODULE__{
+          x: float,
+          y: float
+        }
   defstruct [:x, :y]
 
   def new(x, y) do

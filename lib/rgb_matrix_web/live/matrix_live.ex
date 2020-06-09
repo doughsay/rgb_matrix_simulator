@@ -1,66 +1,65 @@
 defmodule RGBMatrixWeb.MatrixLive do
   use RGBMatrixWeb, :live_view
 
-  alias RGBMatrix.{Animation, LED, KeyWithLED}
+  alias RGBMatrix.Effect
   alias RGBMatrix.Layout.{Full, TKL, Xebow}
 
   import RGBMatrix.Utils, only: [mod: 2]
 
   defmodule State do
-    defstruct [:animation, :pixels]
+    defstruct [:effect, :keys_with_leds]
   end
 
   @impl true
   def mount(_params, _session, socket) do
     send(self(), :get_next_state)
 
-    [initial_animation_type | _] = Animation.types()
+    [initial_effect_type | _] = Effect.types()
 
     state =
       %State{}
-      |> set_pixels(Full.keys())
-      |> set_animation(initial_animation_type)
+      |> set_keys(Full.keys())
+      |> set_effect(initial_effect_type)
 
-    {:ok, assign(socket, state: state, pixels: [])}
+    {:ok, assign(socket, state: state, leds: [])}
   end
 
-  defp set_animation(state, animation_type) do
-    %State{state | animation: Animation.init_state(animation_type, led_locations(state.pixels))}
+  defp set_effect(state, effect_type) do
+    %State{state | effect: Effect.init_state(effect_type, leds(state.keys_with_leds))}
   end
 
-  defp led_locations(pixels) do
-    Enum.map(pixels, fn
-      %KeyWithLED{led: %LED{x: x, y: y}} -> {x, y}
-    end)
+  defp leds(keys_with_leds) do
+    Enum.map(keys_with_leds, & &1.led)
   end
 
-  defp set_pixels(state, pixels) do
-    %State{state | pixels: pixels}
+  defp set_keys(state, keys) do
+    %State{state | keys_with_leds: keys}
   end
 
   @impl true
   def handle_info(:get_next_state, socket) do
     state = socket.assigns.state
-    new_animation_state = Animation.next_state(state.animation)
+    effect = Effect.next_state(state.effect)
 
-    pixels = make_pixels_list(state.pixels, new_animation_state.pixel_colors)
+    view_leds = make_view_leds(state.keys_with_leds, effect.led_colors)
 
-    Process.send_after(self(), :get_next_state, new_animation_state.delay_ms)
+    # TODO: handle infinity
+    Process.send_after(self(), :get_next_state, effect.next_call)
 
-    new_state = %State{state | animation: new_animation_state}
+    state = %State{state | effect: effect}
 
-    {:noreply, assign(socket, state: new_state, pixels: pixels)}
+    {:noreply, assign(socket, state: state, leds: view_leds)}
   end
 
-  defp make_pixels_list(pixels, colors) do
-    Enum.zip(pixels, colors)
-    |> Enum.map(fn {pixel, color} ->
+  defp make_view_leds(keys_with_leds, colors) do
+    Enum.zip(keys_with_leds, colors)
+    |> Enum.map(fn {key_with_led, color} ->
       color = Chameleon.convert(color, Chameleon.Hex).hex
 
-      width = pixel.key.width * 50
-      height = pixel.key.height * 50
-      x = pixel.key.x * 50 - width / 2
-      y = pixel.key.y * 50 - height / 2
+      width = key_with_led.key.width * 50
+      height = key_with_led.key.height * 50
+      x = key_with_led.key.x * 50 - width / 2
+      y = key_with_led.key.y * 50 - height / 2
 
       %{
         x: x,
@@ -73,26 +72,26 @@ defmodule RGBMatrixWeb.MatrixLive do
   end
 
   @impl true
-  def handle_event("next_animation", %{}, socket) do
+  def handle_event("next_effect", %{}, socket) do
     state = socket.assigns.state
-    animation_types = Animation.types()
-    num = Enum.count(animation_types)
-    current = Enum.find_index(animation_types, &(&1 == state.animation.type))
+    effect_types = Effect.types()
+    num = Enum.count(effect_types)
+    current = Enum.find_index(effect_types, &(&1 == state.effect.type))
     next = mod(current + 1, num)
-    animation_type = Enum.at(animation_types, next)
-    new_state = set_animation(state, animation_type)
+    effect_type = Enum.at(effect_types, next)
+    new_state = set_effect(state, effect_type)
 
     {:noreply, assign(socket, state: new_state)}
   end
 
-  def handle_event("previous_animation", %{}, socket) do
+  def handle_event("previous_effect", %{}, socket) do
     state = socket.assigns.state
-    animation_types = Animation.types()
-    num = Enum.count(animation_types)
-    current = Enum.find_index(animation_types, &(&1 == state.animation.type))
+    effect_types = Effect.types()
+    num = Enum.count(effect_types)
+    current = Enum.find_index(effect_types, &(&1 == state.effect.type))
     previous = mod(current - 1, num)
-    animation_type = Enum.at(animation_types, previous)
-    new_state = set_animation(state, animation_type)
+    effect_type = Enum.at(effect_types, previous)
+    new_state = set_effect(state, effect_type)
 
     {:noreply, assign(socket, state: new_state)}
   end
@@ -100,8 +99,8 @@ defmodule RGBMatrixWeb.MatrixLive do
   def handle_event("set_xebow", %{}, socket) do
     state =
       socket.assigns.state
-      |> set_pixels(Xebow.keys())
-      |> set_animation(socket.assigns.state.animation.type)
+      |> set_keys(Xebow.keys())
+      |> set_effect(socket.assigns.state.effect.type)
 
     {:noreply, assign(socket, state: state)}
   end
@@ -109,8 +108,8 @@ defmodule RGBMatrixWeb.MatrixLive do
   def handle_event("set_tkl", %{}, socket) do
     state =
       socket.assigns.state
-      |> set_pixels(TKL.keys())
-      |> set_animation(socket.assigns.state.animation.type)
+      |> set_keys(TKL.keys())
+      |> set_effect(socket.assigns.state.effect.type)
 
     {:noreply, assign(socket, state: state)}
   end
@@ -118,8 +117,8 @@ defmodule RGBMatrixWeb.MatrixLive do
   def handle_event("set_full", %{}, socket) do
     state =
       socket.assigns.state
-      |> set_pixels(Full.keys())
-      |> set_animation(socket.assigns.state.animation.type)
+      |> set_keys(Full.keys())
+      |> set_effect(socket.assigns.state.effect.type)
 
     {:noreply, assign(socket, state: state)}
   end

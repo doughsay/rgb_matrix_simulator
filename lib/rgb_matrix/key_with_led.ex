@@ -5,6 +5,10 @@ defmodule RGBMatrix.KeyWithLED do
 
   alias RGBMatrix.{LED, Key}
 
+  @type t :: %__MODULE__{
+          key: Key.t(),
+          led: LED.t()
+        }
   defstruct [:key, :led]
 
   def new(x, y, width \\ 1, height \\ 1) do
