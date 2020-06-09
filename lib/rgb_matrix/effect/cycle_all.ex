@@ -43,4 +43,9 @@ defmodule RGBMatrix.Effect.CycleAll do
         state: %{state | tick: tick + 1}
     }
   end
+
+  @impl true
+  def key_pressed(effect, _coords) do
+    effect
+  end
 end

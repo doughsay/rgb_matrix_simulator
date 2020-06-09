@@ -3,6 +3,7 @@ defmodule RGBMatrix.Effect do
 
   @callback init_state(leds :: list(LED.t())) :: t
   @callback next_state(effect :: t) :: t
+  @callback key_pressed(effect :: t, {float, float}) :: t
 
   @type t :: %__MODULE__{
           type: type,
@@ -50,5 +51,9 @@ defmodule RGBMatrix.Effect do
   @spec next_state(effect :: t) :: t
   def next_state(effect) do
     effect.type.next_state(effect)
+  end
+
+  def key_pressed(effect, coords) do
+    effect.type.key_pressed(effect, coords)
   end
 end

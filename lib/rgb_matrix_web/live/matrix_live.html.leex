@@ -1,24 +1,25 @@
 <div>
   <button phx-click="previous_effect">← previous</button>
   <button phx-click="next_effect">next →</button>
-  <button phx-click="set_xebow">Xebow</button>
-  <button phx-click="set_tkl">TKL</button>
-  <button phx-click="set_full">Full</button>
+  <button phx-click="set_layout" phx-value-layout="xebow">Xebow</button>
+  <button phx-click="set_layout" phx-value-layout="tkl">TKL</button>
+  <button phx-click="set_layout" phx-value-layout="full">Full</button>
 </div>
 
-<div class='screen'>
+<div class="screen">
   <%= for led <- @leds do %>
     <span
-      class='key'
-      style='
+      class="key"
+      phx-click="key_pressed"
+      phx-value-key-x="<%= led.logical_x %>"
+      phx-value-key-y="<%= led.logical_y %>"
+      style="
         left: <%= led.x %>px;
         top: <%= led.y %>px;
         width: <%= led.width %>px;
         height: <%= led.height %>px;
         background-color: <%= led.color %>
-      '
+      "
     ></span>
   <% end %>
 </div>
-
-

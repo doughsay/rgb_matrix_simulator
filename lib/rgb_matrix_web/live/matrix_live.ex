@@ -62,6 +62,8 @@ defmodule RGBMatrixWeb.MatrixLive do
       y = key_with_led.key.y * 50 - height / 2
 
       %{
+        logical_x: key_with_led.key.x,
+        logical_y: key_with_led.key.y,
         x: x,
         y: y,
         width: width,
@@ -96,29 +98,29 @@ defmodule RGBMatrixWeb.MatrixLive do
     {:noreply, assign(socket, state: new_state)}
   end
 
-  def handle_event("set_xebow", %{}, socket) do
+  def handle_event("set_layout", %{"layout" => layout}, socket) do
+    keys =
+      case layout do
+        "xebow" -> Xebow.keys()
+        "tkl" -> TKL.keys()
+        "full" -> Full.keys()
+      end
+
     state =
       socket.assigns.state
-      |> set_keys(Xebow.keys())
+      |> set_keys(keys)
       |> set_effect(socket.assigns.state.effect.type)
 
     {:noreply, assign(socket, state: state)}
   end
 
-  def handle_event("set_tkl", %{}, socket) do
-    state =
-      socket.assigns.state
-      |> set_keys(TKL.keys())
-      |> set_effect(socket.assigns.state.effect.type)
+  def handle_event("key_pressed", %{"key-x" => x_str, "key-y" => y_str}, socket) do
+    {x, _} = Float.parse(x_str)
+    {y, _} = Float.parse(y_str)
 
-    {:noreply, assign(socket, state: state)}
-  end
-
-  def handle_event("set_full", %{}, socket) do
-    state =
-      socket.assigns.state
-      |> set_keys(Full.keys())
-      |> set_effect(socket.assigns.state.effect.type)
+    state = socket.assigns.state
+    effect = Effect.key_pressed(state.effect, {x, y})
+    state = %State{state | effect: effect}
 
     {:noreply, assign(socket, state: state)}
   end

@@ -27,6 +27,16 @@ defmodule RGBMatrix.Effect.Pinwheel do
     }
   end
 
+  defp determine_center(leds) do
+    {%{x: min_x}, %{x: max_x}} = Enum.min_max_by(leds, & &1.x)
+    {%{y: min_y}, %{y: max_y}} = Enum.min_max_by(leds, & &1.y)
+
+    %{
+      x: (max_x - min_x) / 2 + min_x,
+      y: (max_y - min_y) / 2 + min_y
+    }
+  end
+
   @impl true
   def next_state(effect) do
     %{state: %{tick: tick, speed: speed, center: center} = state, leds: leds} = effect
@@ -56,13 +66,11 @@ defmodule RGBMatrix.Effect.Pinwheel do
     trunc((atan + :math.pi()) * 359 / (2 * :math.pi()))
   end
 
-  defp determine_center(leds) do
-    {%{x: min_x}, %{x: max_x}} = Enum.min_max_by(leds, & &1.x)
-    {%{y: min_y}, %{y: max_y}} = Enum.min_max_by(leds, & &1.y)
-
+  @impl true
+  def key_pressed(effect, {x, y}) do
     %{
-      x: (max_x - min_x) / 2 + min_x,
-      y: (max_y - min_y) / 2 + min_y
+      effect
+      | state: %{effect.state | center: %{x: x, y: y}}
     }
   end
 end
