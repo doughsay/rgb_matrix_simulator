@@ -1,7 +1,7 @@
 defmodule RGBMatrixWeb.MatrixLive do
   use RGBMatrixWeb, :live_view
 
-  alias RGBMatrix.{Effect, LED}
+  alias RGBMatrix.Effect
   alias RGBMatrix.Layout.{Full, TKL, Xebow}
 
   import RGBMatrix.Utils, only: [mod: 2]
@@ -56,11 +56,19 @@ defmodule RGBMatrixWeb.MatrixLive do
   end
 
   defp leds(keys_with_leds) do
-    Enum.map(keys_with_leds, & &1.led)
+    keys_with_leds
+    |> Map.values()
+    |> Enum.map(& &1.led)
   end
 
   defp set_keys(state, keys) do
-    %State{state | keys_with_leds: keys}
+    count = length(keys)
+
+    keys_with_leds =
+      Enum.zip(1..count, keys)
+      |> Map.new()
+
+    %State{state | keys_with_leds: keys_with_leds}
   end
 
   @impl true
@@ -78,29 +86,28 @@ defmodule RGBMatrixWeb.MatrixLive do
   end
 
   defp make_view_leds(keys_with_leds) do
-    Enum.map(keys_with_leds, fn key_with_led ->
-      make_view_led(key_with_led, "000")
+    Enum.map(keys_with_leds, fn {id, key_with_led} ->
+      make_view_led(id, key_with_led, "000")
     end)
   end
 
   defp make_view_leds(keys_with_leds, colors) do
     Enum.zip(keys_with_leds, colors)
-    |> Enum.map(fn {key_with_led, color} ->
+    |> Enum.map(fn {{id, key_with_led}, color} ->
       color = Chameleon.convert(color, Chameleon.Hex).hex
 
-      make_view_led(key_with_led, color)
+      make_view_led(id, key_with_led, color)
     end)
   end
 
-  defp make_view_led(key_with_led, color) do
+  defp make_view_led(id, key_with_led, color) do
     width = key_with_led.key.width * 50
     height = key_with_led.key.height * 50
     x = key_with_led.key.x * 50 - width / 2
     y = key_with_led.key.y * 50 - height / 2
 
     %{
-      logical_x: key_with_led.key.x,
-      logical_y: key_with_led.key.y,
+      id: id,
       x: x,
       y: y,
       width: width,
@@ -150,12 +157,12 @@ defmodule RGBMatrixWeb.MatrixLive do
     {:noreply, assign(socket, state: state, leds: make_view_leds(state.keys_with_leds))}
   end
 
-  def handle_event("key_pressed", %{"key-x" => x_str, "key-y" => y_str}, socket) do
-    {x, _} = Float.parse(x_str)
-    {y, _} = Float.parse(y_str)
+  def handle_event("key_pressed", %{"key-id" => id_str}, socket) do
+    {id, _} = Integer.parse(id_str)
+    led = Map.fetch!(socket.assigns.state.keys_with_leds, id).led
 
     state = socket.assigns.state
-    {render_in, effect} = Effect.key_pressed(state.effect, LED.new(x, y))
+    {render_in, effect} = Effect.key_pressed(state.effect, led)
     state = schedule_next_render(state, render_in)
     state = %State{state | effect: effect}
 

@@ -24,6 +24,7 @@ defmodule RGBMatrix.Effect do
           | __MODULE__.CycleLeftToRight
           | __MODULE__.Pinwheel
           | __MODULE__.RandomSolid
+          | __MODULE__.RandomKeypresses
 
   @doc """
   Returns a list of the available types of animations.
@@ -34,7 +35,8 @@ defmodule RGBMatrix.Effect do
       __MODULE__.CycleAll,
       __MODULE__.CycleLeftToRight,
       __MODULE__.Pinwheel,
-      __MODULE__.RandomSolid
+      __MODULE__.RandomSolid,
+      __MODULE__.RandomKeypresses
     ]
   end
 
