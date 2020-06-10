@@ -11,36 +11,31 @@ defmodule RGBMatrix.Effect.CycleAll do
   import RGBMatrix.Utils, only: [mod: 2]
 
   defmodule State do
-    defstruct [:tick, :speed]
+    defstruct [:tick, :speed, :led_count]
   end
 
   @delay_ms 17
 
   @impl true
   def new(leds) do
-    %Effect{
-      type: __MODULE__,
-      state: %State{tick: 0, speed: 100},
-      leds: leds,
-      next_call: @delay_ms
-    }
+    {0, %State{tick: 0, speed: 100, led_count: length(leds)}}
   end
 
   @impl true
-  def render(effect) do
-    %{state: %{tick: tick, speed: speed} = state, leds: leds} = effect
+  def render(state) do
+    %{tick: tick, speed: speed, led_count: led_count} = state
 
     time = div(tick * speed, 100)
     hue = mod(time, 360)
     color = HSV.new(hue, 100, 100)
 
-    colors = Enum.map(leds, fn _led -> color end)
+    colors = Enum.map(1..led_count, fn _ -> color end)
 
-    {colors, %{effect | state: %{state | tick: tick + 1}}}
+    {colors, @delay_ms, %{state | tick: tick + 1}}
   end
 
   @impl true
-  def key_pressed(effect, _led) do
-    effect
+  def key_pressed(state, _led) do
+    {:ignore, state}
   end
 end

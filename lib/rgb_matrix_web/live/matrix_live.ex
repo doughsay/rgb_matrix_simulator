@@ -7,13 +7,11 @@ defmodule RGBMatrixWeb.MatrixLive do
   import RGBMatrix.Utils, only: [mod: 2]
 
   defmodule State do
-    defstruct [:effect, :keys_with_leds]
+    defstruct [:effect, :keys_with_leds, :timer]
   end
 
   @impl true
   def mount(_params, _session, socket) do
-    send(self(), :get_next_state)
-
     [initial_effect_type | _] = Effect.types()
 
     state =
@@ -21,11 +19,40 @@ defmodule RGBMatrixWeb.MatrixLive do
       |> set_keys(Full.keys())
       |> set_effect(initial_effect_type)
 
-    {:ok, assign(socket, state: state, leds: [])}
+    {:ok, assign(socket, state: state, leds: make_view_leds(state.keys_with_leds))}
   end
 
   defp set_effect(state, effect_type) do
-    %State{state | effect: Effect.new(effect_type, leds(state.keys_with_leds))}
+    {render_in, effect} = Effect.new(effect_type, leds(state.keys_with_leds))
+
+    state = schedule_next_render(state, render_in)
+
+    %State{state | effect: effect}
+  end
+
+  defp schedule_next_render(state, :ignore) do
+    state
+  end
+
+  defp schedule_next_render(state, :never) do
+    cancel_timer(state)
+  end
+
+  defp schedule_next_render(state, 0) do
+    send(self(), :render)
+    cancel_timer(state)
+  end
+
+  defp schedule_next_render(state, ms) when is_integer(ms) and ms > 0 do
+    state = cancel_timer(state)
+    %{state | timer: Process.send_after(self(), :render, ms)}
+  end
+
+  defp cancel_timer(%{timer: nil} = state), do: state
+
+  defp cancel_timer(state) do
+    Process.cancel_timer(state.timer)
+    %{state | timer: nil}
   end
 
   defp leds(keys_with_leds) do
@@ -37,18 +64,23 @@ defmodule RGBMatrixWeb.MatrixLive do
   end
 
   @impl true
-  def handle_info(:get_next_state, socket) do
+  def handle_info(:render, socket) do
     state = socket.assigns.state
-    {led_colors, effect} = Effect.render(state.effect)
+    {led_colors, render_in, effect} = Effect.render(state.effect)
 
     view_leds = make_view_leds(state.keys_with_leds, led_colors)
 
-    # TODO: handle infinity
-    Process.send_after(self(), :get_next_state, effect.next_call)
+    state = schedule_next_render(state, render_in)
 
     state = %State{state | effect: effect}
 
     {:noreply, assign(socket, state: state, leds: view_leds)}
+  end
+
+  defp make_view_leds(keys_with_leds) do
+    Enum.map(keys_with_leds, fn key_with_led ->
+      make_view_led(key_with_led, "000")
+    end)
   end
 
   defp make_view_leds(keys_with_leds, colors) do
@@ -56,21 +88,25 @@ defmodule RGBMatrixWeb.MatrixLive do
     |> Enum.map(fn {key_with_led, color} ->
       color = Chameleon.convert(color, Chameleon.Hex).hex
 
-      width = key_with_led.key.width * 50
-      height = key_with_led.key.height * 50
-      x = key_with_led.key.x * 50 - width / 2
-      y = key_with_led.key.y * 50 - height / 2
-
-      %{
-        logical_x: key_with_led.key.x,
-        logical_y: key_with_led.key.y,
-        x: x,
-        y: y,
-        width: width,
-        height: height,
-        color: "#" <> color
-      }
+      make_view_led(key_with_led, color)
     end)
+  end
+
+  defp make_view_led(key_with_led, color) do
+    width = key_with_led.key.width * 50
+    height = key_with_led.key.height * 50
+    x = key_with_led.key.x * 50 - width / 2
+    y = key_with_led.key.y * 50 - height / 2
+
+    %{
+      logical_x: key_with_led.key.x,
+      logical_y: key_with_led.key.y,
+      x: x,
+      y: y,
+      width: width,
+      height: height,
+      color: "#" <> color
+    }
   end
 
   @impl true
@@ -111,7 +147,7 @@ defmodule RGBMatrixWeb.MatrixLive do
       |> set_keys(keys)
       |> set_effect(socket.assigns.state.effect.type)
 
-    {:noreply, assign(socket, state: state)}
+    {:noreply, assign(socket, state: state, leds: make_view_leds(state.keys_with_leds))}
   end
 
   def handle_event("key_pressed", %{"key-x" => x_str, "key-y" => y_str}, socket) do
@@ -119,7 +155,8 @@ defmodule RGBMatrixWeb.MatrixLive do
     {y, _} = Float.parse(y_str)
 
     state = socket.assigns.state
-    effect = Effect.key_pressed(state.effect, LED.new(x, y))
+    {render_in, effect} = Effect.key_pressed(state.effect, LED.new(x, y))
+    state = schedule_next_render(state, render_in)
     state = %State{state | effect: effect}
 
     {:noreply, assign(socket, state: state)}
