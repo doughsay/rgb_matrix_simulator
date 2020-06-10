@@ -17,18 +17,17 @@ defmodule RGBMatrix.Effect.CycleLeftToRight do
   @delay_ms 17
 
   @impl true
-  def init_state(leds) do
+  def new(leds) do
     %Effect{
       type: __MODULE__,
       state: %State{tick: 0, speed: 100},
       leds: leds,
-      led_colors: nil,
       next_call: @delay_ms
     }
   end
 
   @impl true
-  def next_state(effect) do
+  def render(effect) do
     %{state: %{tick: tick, speed: speed} = state, leds: leds} = effect
 
     time = div(tick * speed, 100)
@@ -39,15 +38,11 @@ defmodule RGBMatrix.Effect.CycleLeftToRight do
         HSV.new(hue, 100, 100)
       end
 
-    %{
-      effect
-      | led_colors: colors,
-        state: %{state | tick: tick + 1}
-    }
+    {colors, %{effect | state: %{state | tick: tick + 1}}}
   end
 
   @impl true
-  def key_pressed(effect, _coords) do
+  def key_pressed(effect, _led) do
     effect
   end
 end

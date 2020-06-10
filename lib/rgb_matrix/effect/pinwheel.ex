@@ -17,12 +17,11 @@ defmodule RGBMatrix.Effect.Pinwheel do
   @delay_ms 17
 
   @impl true
-  def init_state(leds) do
+  def new(leds) do
     %Effect{
       type: __MODULE__,
       state: %State{tick: 0, speed: 100, center: determine_center(leds)},
       leds: leds,
-      led_colors: nil,
       next_call: @delay_ms
     }
   end
@@ -38,7 +37,7 @@ defmodule RGBMatrix.Effect.Pinwheel do
   end
 
   @impl true
-  def next_state(effect) do
+  def render(effect) do
     %{state: %{tick: tick, speed: speed, center: center} = state, leds: leds} = effect
 
     time = div(tick * speed, 100)
@@ -53,11 +52,7 @@ defmodule RGBMatrix.Effect.Pinwheel do
         HSV.new(hue, 100, 100)
       end
 
-    %{
-      effect
-      | led_colors: colors,
-        state: %{state | tick: tick + 1}
-    }
+    {colors, %{effect | state: %{state | tick: tick + 1}}}
   end
 
   defp atan2_8(x, y) do
@@ -67,10 +62,7 @@ defmodule RGBMatrix.Effect.Pinwheel do
   end
 
   @impl true
-  def key_pressed(effect, {x, y}) do
-    %{
-      effect
-      | state: %{effect.state | center: %{x: x, y: y}}
-    }
+  def key_pressed(effect, %LED{x: x, y: y}) do
+    %{effect | state: %{effect.state | center: %{x: x, y: y}}}
   end
 end

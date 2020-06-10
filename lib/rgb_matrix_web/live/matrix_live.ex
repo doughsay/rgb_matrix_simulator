@@ -1,7 +1,7 @@
 defmodule RGBMatrixWeb.MatrixLive do
   use RGBMatrixWeb, :live_view
 
-  alias RGBMatrix.Effect
+  alias RGBMatrix.{Effect, LED}
   alias RGBMatrix.Layout.{Full, TKL, Xebow}
 
   import RGBMatrix.Utils, only: [mod: 2]
@@ -25,7 +25,7 @@ defmodule RGBMatrixWeb.MatrixLive do
   end
 
   defp set_effect(state, effect_type) do
-    %State{state | effect: Effect.init_state(effect_type, leds(state.keys_with_leds))}
+    %State{state | effect: Effect.new(effect_type, leds(state.keys_with_leds))}
   end
 
   defp leds(keys_with_leds) do
@@ -39,9 +39,9 @@ defmodule RGBMatrixWeb.MatrixLive do
   @impl true
   def handle_info(:get_next_state, socket) do
     state = socket.assigns.state
-    effect = Effect.next_state(state.effect)
+    {led_colors, effect} = Effect.render(state.effect)
 
-    view_leds = make_view_leds(state.keys_with_leds, effect.led_colors)
+    view_leds = make_view_leds(state.keys_with_leds, led_colors)
 
     # TODO: handle infinity
     Process.send_after(self(), :get_next_state, effect.next_call)
@@ -119,7 +119,7 @@ defmodule RGBMatrixWeb.MatrixLive do
     {y, _} = Float.parse(y_str)
 
     state = socket.assigns.state
-    effect = Effect.key_pressed(state.effect, {x, y})
+    effect = Effect.key_pressed(state.effect, LED.new(x, y))
     state = %State{state | effect: effect}
 
     {:noreply, assign(socket, state: state)}

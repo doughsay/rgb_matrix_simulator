@@ -1,15 +1,14 @@
 defmodule RGBMatrix.Effect do
   alias RGBMatrix.LED
 
-  @callback init_state(leds :: list(LED.t())) :: t
-  @callback next_state(effect :: t) :: t
-  @callback key_pressed(effect :: t, {float, float}) :: t
+  @callback new(leds :: list(LED.t())) :: t
+  @callback render(effect :: t) :: {list(RGBMatrix.any_color_model()), t}
+  @callback key_pressed(effect :: t, LED.t()) :: t
 
   @type t :: %__MODULE__{
           type: type,
           state: any,
           leds: list(LED.t()),
-          led_colors: list(RGBMatrix.any_color_model()),
           next_call: integer | :infinity
         }
   defstruct [:type, :state, :leds, :led_colors, :next_call]
@@ -40,20 +39,26 @@ defmodule RGBMatrix.Effect do
   @doc """
   Returns an effect's initial state.
   """
-  @spec init_state(effect_type :: type, leds :: list(LED.t())) :: any
-  def init_state(effect_type, leds) do
-    effect_type.init_state(leds)
+  @spec new(effect_type :: type, leds :: list(LED.t())) :: t
+  def new(effect_type, leds) do
+    effect_type.new(leds)
   end
 
   @doc """
   Returns the next state of an effect based on its current state.
   """
-  @spec next_state(effect :: t) :: t
-  def next_state(effect) do
-    effect.type.next_state(effect)
+  @spec render(effect :: t) :: {list(RGBMatrix.any_color_model()), t}
+  def render(effect) do
+    effect.type.render(effect)
   end
 
-  def key_pressed(effect, coords) do
-    effect.type.key_pressed(effect, coords)
+  @doc """
+  Sends a key pressed event to an effect.
+  """
+  @spec key_pressed(effect :: t, led :: LED.t()) :: t
+  def key_pressed(effect, led) do
+    effect.type.key_pressed(effect, led)
   end
+
+  # TODO: key_down and key_up?
 end
