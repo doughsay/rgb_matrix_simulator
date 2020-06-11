@@ -20,6 +20,10 @@ defmodule RGBMatrix.Effect.RandomKeypresses do
      }}
   end
 
+  defp random_color do
+    HSV.new((:rand.uniform() * 360) |> trunc(), 100, 100)
+  end
+
   @impl true
   def render(state) do
     %{led_colors: led_colors} = state
@@ -40,7 +44,13 @@ defmodule RGBMatrix.Effect.RandomKeypresses do
     {0, %{state | led_colors: led_colors}}
   end
 
-  defp random_color do
-    HSV.new((:rand.uniform() * 360) |> trunc(), 100, 100)
+  @impl true
+  def inc(state, _property) do
+    {:ignore, state}
+  end
+
+  @impl true
+  def dec(state, _property) do
+    {:ignore, state}
   end
 end

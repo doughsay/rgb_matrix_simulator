@@ -28,12 +28,22 @@ defmodule RGBMatrix.Effect.RandomSolid do
     {colors, :never, state}
   end
 
+  defp random_color do
+    HSV.new((:rand.uniform() * 360) |> trunc(), 100, 100)
+  end
+
   @impl true
   def key_pressed(state, _led) do
     {0, state}
   end
 
-  defp random_color do
-    HSV.new((:rand.uniform() * 360) |> trunc(), 100, 100)
+  @impl true
+  def inc(state, _property) do
+    {:ignore, state}
+  end
+
+  @impl true
+  def dec(state, _property) do
+    {:ignore, state}
   end
 end
