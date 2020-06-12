@@ -38,14 +38,4 @@ defmodule RGBMatrix.Effect.CycleAll do
   def key_pressed(state, _led) do
     {:ignore, state}
   end
-
-  @impl true
-  def inc(state, _property) do
-    {:ignore, state}
-  end
-
-  @impl true
-  def dec(state, _property) do
-    {:ignore, state}
-  end
 end

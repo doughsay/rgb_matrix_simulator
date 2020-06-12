@@ -168,24 +168,4 @@ defmodule RGBMatrixWeb.MatrixLive do
 
     {:noreply, assign(socket, state: state)}
   end
-
-  def handle_event("increase", %{"property" => property}, socket) do
-    property = String.to_existing_atom(property)
-    state = socket.assigns.state
-    {render_in, effect} = Effect.inc(state.effect, property)
-    state = schedule_next_render(state, render_in)
-    state = %State{state | effect: effect}
-
-    {:noreply, assign(socket, state: state)}
-  end
-
-  def handle_event("decrease", %{"property" => property}, socket) do
-    property = String.to_existing_atom(property)
-    state = socket.assigns.state
-    {render_in, effect} = Effect.dec(state.effect, property)
-    state = schedule_next_render(state, render_in)
-    state = %State{state | effect: effect}
-
-    {:noreply, assign(socket, state: state)}
-  end
 end

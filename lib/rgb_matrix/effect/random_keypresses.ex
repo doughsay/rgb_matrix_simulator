@@ -43,14 +43,4 @@ defmodule RGBMatrix.Effect.RandomKeypresses do
 
     {0, %{state | led_colors: led_colors}}
   end
-
-  @impl true
-  def inc(state, _property) do
-    {:ignore, state}
-  end
-
-  @impl true
-  def dec(state, _property) do
-    {:ignore, state}
-  end
 end

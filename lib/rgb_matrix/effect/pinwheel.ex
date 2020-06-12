@@ -60,14 +60,4 @@ defmodule RGBMatrix.Effect.Pinwheel do
   def key_pressed(state, %LED{x: x, y: y}) do
     {:ignore, %{state | center: %{x: x, y: y}}}
   end
-
-  @impl true
-  def inc(state, _property) do
-    {:ignore, state}
-  end
-
-  @impl true
-  def dec(state, _property) do
-    {:ignore, state}
-  end
 end

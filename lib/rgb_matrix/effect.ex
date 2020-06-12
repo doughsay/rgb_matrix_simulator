@@ -4,8 +4,6 @@ defmodule RGBMatrix.Effect do
   @callback new(leds :: list(LED.t())) :: {render_in, any}
   @callback render(state :: any) :: {list(RGBMatrix.any_color_model()), render_in, any}
   @callback key_pressed(state :: any, led :: LED.t()) :: {render_in, any}
-  @callback inc(state :: any, property :: property) :: {render_in, any}
-  @callback dec(state :: any, property :: property) :: {render_in, any}
 
   @type t :: %__MODULE__{
           type: type,
@@ -20,8 +18,6 @@ defmodule RGBMatrix.Effect do
   end
 
   @type render_in :: non_neg_integer() | :never | :ignore
-
-  @type property :: :speed
 
   @type type ::
           __MODULE__.CycleAll
@@ -74,16 +70,6 @@ defmodule RGBMatrix.Effect do
   @spec key_pressed(effect :: t, led :: LED.t()) :: {render_in, t}
   def key_pressed(effect, led) do
     {render_in, effect_state} = effect.type.key_pressed(effect.state, led)
-    {render_in, %{effect | state: effect_state}}
-  end
-
-  def inc(effect, property) do
-    {render_in, effect_state} = effect.type.inc(effect.state, property)
-    {render_in, %{effect | state: effect_state}}
-  end
-
-  def dec(effect, property) do
-    {render_in, effect_state} = effect.type.dec(effect.state, property)
     {render_in, %{effect | state: effect_state}}
   end
 
