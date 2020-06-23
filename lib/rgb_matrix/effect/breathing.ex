@@ -8,6 +8,10 @@ defmodule RGBMatrix.Effect.Breathing do
 
   use Effect
 
+  defmodule Config do
+    use RGBMatrix.Effect.Config
+  end
+
   defmodule State do
     defstruct [:color, :tick, :speed, :led_count]
   end
@@ -15,14 +19,14 @@ defmodule RGBMatrix.Effect.Breathing do
   @delay_ms 17
 
   @impl true
-  def new(leds) do
+  def new(leds, _config) do
     # TODO: configurable base color
     color = HSV.new(40, 100, 100)
     {0, %State{color: color, tick: 0, speed: 100, led_count: length(leds)}}
   end
 
   @impl true
-  def render(state) do
+  def render(state, _config) do
     %{color: base_color, tick: tick, speed: speed, led_count: led_count} = state
 
     value = trunc(abs(:math.sin(tick * speed / 5_000)) * base_color.v)
@@ -34,7 +38,7 @@ defmodule RGBMatrix.Effect.Breathing do
   end
 
   @impl true
-  def key_pressed(state, _led) do
+  def key_pressed(state, _config, _led) do
     {:ignore, state}
   end
 end

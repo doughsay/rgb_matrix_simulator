@@ -8,12 +8,16 @@ defmodule RGBMatrix.Effect.RandomKeypresses do
 
   use Effect
 
+  defmodule Config do
+    use RGBMatrix.Effect.Config
+  end
+
   defmodule State do
     defstruct [:led_colors]
   end
 
   @impl true
-  def new(leds) do
+  def new(leds, _config) do
     {0,
      %State{
        led_colors: Enum.map(leds, fn led -> {led, random_color()} end)
@@ -25,7 +29,7 @@ defmodule RGBMatrix.Effect.RandomKeypresses do
   end
 
   @impl true
-  def render(state) do
+  def render(state, _config) do
     %{led_colors: led_colors} = state
 
     colors = Enum.map(led_colors, fn {_led, color} -> color end)
@@ -34,7 +38,7 @@ defmodule RGBMatrix.Effect.RandomKeypresses do
   end
 
   @impl true
-  def key_pressed(state, led) do
+  def key_pressed(state, _config, led) do
     led_colors =
       Enum.map(state.led_colors, fn
         {^led, _color} -> {led, random_color()}

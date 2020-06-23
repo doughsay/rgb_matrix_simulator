@@ -10,6 +10,10 @@ defmodule RGBMatrix.Effect.Pinwheel do
 
   import RGBMatrix.Utils, only: [mod: 2]
 
+  defmodule Config do
+    use RGBMatrix.Effect.Config
+  end
+
   defmodule State do
     defstruct [:tick, :speed, :leds, :center]
   end
@@ -17,7 +21,7 @@ defmodule RGBMatrix.Effect.Pinwheel do
   @delay_ms 17
 
   @impl true
-  def new(leds) do
+  def new(leds, _config) do
     {0, %State{tick: 0, speed: 100, leds: leds, center: determine_center(leds)}}
   end
 
@@ -32,7 +36,7 @@ defmodule RGBMatrix.Effect.Pinwheel do
   end
 
   @impl true
-  def render(state) do
+  def render(state, _config) do
     %{tick: tick, speed: speed, leds: leds, center: center} = state
 
     time = div(tick * speed, 100)
@@ -57,7 +61,7 @@ defmodule RGBMatrix.Effect.Pinwheel do
   end
 
   @impl true
-  def key_pressed(state, %LED{x: x, y: y}) do
+  def key_pressed(state, _config, %LED{x: x, y: y}) do
     {:ignore, %{state | center: %{x: x, y: y}}}
   end
 end

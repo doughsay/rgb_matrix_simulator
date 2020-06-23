@@ -37,3 +37,7 @@
     ></span>
   <% end %>
 </div>
+
+<hr>
+
+<%= live_component @socket, RGBMatrixWeb.EffectConfigComponent, schema: @config_schema, config: @config %>

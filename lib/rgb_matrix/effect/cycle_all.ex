@@ -10,6 +10,10 @@ defmodule RGBMatrix.Effect.CycleAll do
 
   import RGBMatrix.Utils, only: [mod: 2]
 
+  defmodule Config do
+    use RGBMatrix.Effect.Config
+  end
+
   defmodule State do
     defstruct [:tick, :speed, :led_count]
   end
@@ -17,12 +21,12 @@ defmodule RGBMatrix.Effect.CycleAll do
   @delay_ms 17
 
   @impl true
-  def new(leds) do
+  def new(leds, _config) do
     {0, %State{tick: 0, speed: 100, led_count: length(leds)}}
   end
 
   @impl true
-  def render(state) do
+  def render(state, _config) do
     %{tick: tick, speed: speed, led_count: led_count} = state
 
     time = div(tick * speed, 100)
@@ -35,7 +39,7 @@ defmodule RGBMatrix.Effect.CycleAll do
   end
 
   @impl true
-  def key_pressed(state, _led) do
+  def key_pressed(state, _config, _led) do
     {:ignore, state}
   end
 end
