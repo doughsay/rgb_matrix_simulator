@@ -13,21 +13,21 @@ defmodule RGBMatrix.Effect.RandomSolid do
   end
 
   defmodule State do
-    defstruct [:led_count]
+    defstruct [:led_ids]
   end
 
   @impl true
   def new(leds, _config) do
-    {0, %State{led_count: length(leds)}}
+    {0, %State{led_ids: Enum.map(leds, & &1.id)}}
   end
 
   @impl true
   def render(state, _config) do
-    %{led_count: led_count} = state
+    %{led_ids: led_ids} = state
 
     color = random_color()
 
-    colors = Enum.map(1..led_count, fn _led -> color end)
+    colors = Enum.map(led_ids, fn id -> {id, color} end)
 
     {colors, :never, state}
   end

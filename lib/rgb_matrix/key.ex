@@ -4,14 +4,23 @@ defmodule RGBMatrix.Key do
   """
 
   @type t :: %__MODULE__{
+          id: atom,
           x: float,
           y: float,
           width: float,
-          height: float
+          height: float,
+          led: atom
         }
-  defstruct [:x, :y, :width, :height]
+  defstruct [:id, :x, :y, :width, :height, :led]
 
-  def new(x, y, width \\ 1, height \\ 1) do
-    struct!(__MODULE__, x: x, y: y, width: width, height: height)
+  def new(id, x, y, opts \\ []) do
+    struct!(__MODULE__,
+      id: id,
+      x: x,
+      y: y,
+      width: Keyword.get(opts, :width, 1),
+      height: Keyword.get(opts, :height, 1),
+      led: Keyword.get(opts, :led)
+    )
   end
 end

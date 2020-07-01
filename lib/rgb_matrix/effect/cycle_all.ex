@@ -15,25 +15,26 @@ defmodule RGBMatrix.Effect.CycleAll do
   end
 
   defmodule State do
-    defstruct [:tick, :speed, :led_count]
+    defstruct [:tick, :speed, :led_ids]
   end
 
   @delay_ms 17
 
   @impl true
   def new(leds, _config) do
-    {0, %State{tick: 0, speed: 100, led_count: length(leds)}}
+    led_ids = Enum.map(leds, & &1.id)
+    {0, %State{tick: 0, speed: 100, led_ids: led_ids}}
   end
 
   @impl true
   def render(state, _config) do
-    %{tick: tick, speed: speed, led_count: led_count} = state
+    %{tick: tick, speed: speed, led_ids: led_ids} = state
 
     time = div(tick * speed, 100)
     hue = mod(time, 360)
     color = HSV.new(hue, 100, 100)
 
-    colors = Enum.map(1..led_count, fn _ -> color end)
+    colors = Enum.map(led_ids, fn id -> {id, color} end)
 
     {colors, @delay_ms, %{state | tick: tick + 1}}
   end

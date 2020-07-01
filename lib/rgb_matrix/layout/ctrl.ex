@@ -1,4 +1,4 @@
-defmodule RGBMatrix.Layout.TKL do
+defmodule RGBMatrix.Layout.CTRL do
   alias RGBMatrix.{Key, Layout, LED}
 
   @leds [
@@ -93,7 +93,50 @@ defmodule RGBMatrix.Layout.TKL do
     LED.new(:l084, 13.875, 5.5),
     LED.new(:l085, 15.25, 5.5),
     LED.new(:l086, 16.25, 5.5),
-    LED.new(:l087, 17.25, 5.5)
+    LED.new(:l087, 17.25, 5.5),
+    # perimeter LEDs:
+    # top-left corner
+    LED.new(:l088, -1, -1),
+    # going down
+    LED.new(:l089, -1, 0.875),
+    LED.new(:l090, -1, 2.75),
+    LED.new(:l091, -1, 4.625),
+    # bottom-left corner
+    LED.new(:l092, -1, 6.5),
+    # going right
+    LED.new(:l093, 0.604166667, 6.5),
+    LED.new(:l094, 2.208333334, 6.5),
+    LED.new(:l095, 3.812500001, 6.5),
+    LED.new(:l096, 5.416666668, 6.5),
+    LED.new(:l097, 7.020833335, 6.5),
+    LED.new(:l098, 8.625000002, 6.5),
+    LED.new(:l099, 10.229166669, 6.5),
+    LED.new(:l100, 11.833333336, 6.5),
+    LED.new(:l101, 13.437500003, 6.5),
+    LED.new(:l102, 15.04166667, 6.5),
+    LED.new(:l103, 16.645833337, 6.5),
+    LED.new(:l104, 16.645833337, 6.5),
+    # bottom-right corner
+    LED.new(:l105, 18.25, 6.5),
+    # going up
+    LED.new(:l106, 18.25, 4.625),
+    LED.new(:l107, 18.25, 2.75),
+    LED.new(:l108, 18.25, 0.875),
+    # top-right corner
+    LED.new(:l109, 18.25, -1),
+    # going left
+    LED.new(:l110, 16.645833337, -1),
+    LED.new(:l111, 16.645833337, -1),
+    LED.new(:l112, 15.04166667, -1),
+    LED.new(:l113, 13.437500003, -1),
+    LED.new(:l114, 11.833333336, -1),
+    LED.new(:l115, 10.229166669, -1),
+    LED.new(:l116, 8.625000002, -1),
+    LED.new(:l117, 7.020833335, -1),
+    LED.new(:l118, 5.416666668, -1),
+    LED.new(:l119, 3.812500001, -1),
+    LED.new(:l120, 2.208333334, -1),
+    LED.new(:l121, 0.604166667, -1)
   ]
 
   @keys [

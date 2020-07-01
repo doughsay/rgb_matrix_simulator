@@ -67,30 +67,30 @@ defmodule RGBMatrix.Effect.HueWave do
   end
 
   defp render_colors(leds, steps, time, :right) do
-    for %LED{x: x} <- leds do
+    for %LED{id: id, x: x} <- leds do
       hue = mod(trunc(x * steps) - time, 360)
-      HSV.new(hue, 100, 100)
+      {id, HSV.new(hue, 100, 100)}
     end
   end
 
   defp render_colors(leds, steps, time, :left) do
-    for %LED{x: x} <- leds do
+    for %LED{id: id, x: x} <- leds do
       hue = mod(trunc(x * steps) + time, 360)
-      HSV.new(hue, 100, 100)
+      {id, HSV.new(hue, 100, 100)}
     end
   end
 
   defp render_colors(leds, steps, time, :up) do
-    for %LED{y: y} <- leds do
+    for %LED{id: id, y: y} <- leds do
       hue = mod(trunc(y * steps) + time, 360)
-      HSV.new(hue, 100, 100)
+      {id, HSV.new(hue, 100, 100)}
     end
   end
 
   defp render_colors(leds, steps, time, :down) do
-    for %LED{y: y} <- leds do
+    for %LED{id: id, y: y} <- leds do
       hue = mod(trunc(y * steps) - time, 360)
-      HSV.new(hue, 100, 100)
+      {id, HSV.new(hue, 100, 100)}
     end
   end
 

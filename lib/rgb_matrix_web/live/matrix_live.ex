@@ -1,13 +1,13 @@
 defmodule RGBMatrixWeb.MatrixLive do
   use RGBMatrixWeb, :live_view
 
-  alias RGBMatrix.Effect
-  alias RGBMatrix.Layout.{Full, TKL, Xebow}
+  alias RGBMatrix.{Effect, Layout}
+  alias RGBMatrix.Layout.{CTRL, Full, TKL, Xebow}
 
   import RGBMatrix.Utils, only: [mod: 2]
 
   defmodule State do
-    defstruct [:effect, :keys_with_leds, :timer]
+    defstruct [:effect, :layout, :current_colors, :timer]
   end
 
   @impl true
@@ -17,56 +17,84 @@ defmodule RGBMatrixWeb.MatrixLive do
     {:ok,
      socket
      |> assign(state: %State{})
-     |> set_keys(Full.keys())
+     |> set_layout(CTRL.new())
      |> set_effect(initial_effect_type)}
   end
 
-  defp set_keys(%{assigns: %{state: state}} = socket, keys) do
-    count = length(keys)
-
-    keys_with_leds =
-      Enum.zip(1..count, keys)
-      |> Map.new()
+  defp set_layout(%{assigns: %{state: state}} = socket, layout) do
+    black = Chameleon.HSV.new(0, 0, 0)
+    colors = Enum.map(leds(layout), &{&1.id, black})
 
     assign(socket,
-      state: %State{state | keys_with_leds: keys_with_leds},
-      leds: make_view_leds(keys_with_leds)
+      state: %State{state | layout: layout, current_colors: colors},
+      leds: make_view_leds(layout, colors)
     )
   end
 
-  defp make_view_leds(keys_with_leds) do
-    Enum.map(keys_with_leds, fn {id, key_with_led} ->
-      make_view_led(id, key_with_led, "000")
-    end)
+  defp make_view_leds(layout, colors) do
+    colors_map = Map.new(colors)
+
+    leds_with_maybe_keys =
+      layout
+      |> Layout.leds()
+      |> Enum.map(fn {led_id, led} ->
+        color =
+          colors_map
+          |> Map.fetch!(led_id)
+          |> Chameleon.convert(Chameleon.Hex)
+
+        key = Layout.key_for_led(layout, led_id)
+
+        make_view_led(color.hex, led, key)
+      end)
+
+    keys_with_no_leds =
+      layout
+      |> Layout.keys()
+      |> Enum.filter(fn {_key_id, key} -> is_nil(key.led) end)
+      |> Enum.map(fn {_key_id, key} ->
+        make_view_led("000", nil, key)
+      end)
+
+    leds_with_maybe_keys ++ keys_with_no_leds
   end
 
-  defp make_view_leds(keys_with_leds, colors) do
-    Enum.zip(keys_with_leds, colors)
-    |> Enum.map(fn {{id, key_with_led}, color} ->
-      color = Chameleon.convert(color, Chameleon.Hex).hex
-
-      make_view_led(id, key_with_led, color)
-    end)
-  end
-
-  defp make_view_led(id, key_with_led, color) do
-    width = key_with_led.key.width * 50
-    height = key_with_led.key.height * 50
-    x = key_with_led.key.x * 50 - width / 2
-    y = key_with_led.key.y * 50 - height / 2
+  defp make_view_led(color_hex, led, nil) do
+    width = 25
+    height = 25
+    x = led.x * 50 - width / 2
+    y = led.y * 50 - height / 2
 
     %{
-      id: id,
+      class: "led",
+      id: led.id,
       x: x,
       y: y,
       width: width,
       height: height,
-      color: "#" <> color
+      color: "#" <> color_hex
+    }
+  end
+
+  defp make_view_led(color_hex, _led, key) do
+    width = key.width * 50
+    height = key.height * 50
+    x = key.x * 50 - width / 2
+    y = key.y * 50 - height / 2
+
+    %{
+      class: "key",
+      id: key.id,
+      x: x,
+      y: y,
+      width: width,
+      height: height,
+      color: "#" <> color_hex
     }
   end
 
   defp set_effect(%{assigns: %{state: state}} = socket, effect_type) do
-    {render_in, effect} = Effect.new(effect_type, leds(state.keys_with_leds))
+    {render_in, effect} = Effect.new(effect_type, leds(state.layout))
     %config_module{} = config = effect.config
 
     state = schedule_next_render(state, render_in)
@@ -103,24 +131,32 @@ defmodule RGBMatrixWeb.MatrixLive do
     %{state | timer: nil}
   end
 
-  defp leds(keys_with_leds) do
-    keys_with_leds
-    |> Map.values()
-    |> Enum.map(& &1.led)
+  defp leds(layout) do
+    Keyword.values(layout.leds)
   end
 
   @impl true
   def handle_info(:render, socket) do
     state = socket.assigns.state
-    {led_colors, render_in, effect} = Effect.render(state.effect)
+    {new_colors, render_in, effect} = Effect.render(state.effect)
 
-    view_leds = make_view_leds(state.keys_with_leds, led_colors)
-
+    colors = combine_colors(state.current_colors, new_colors)
+    view_leds = make_view_leds(state.layout, colors)
     state = schedule_next_render(state, render_in)
-
-    state = %State{state | effect: effect}
+    state = %State{state | effect: effect, current_colors: colors}
 
     {:noreply, assign(socket, state: state, leds: view_leds)}
+  end
+
+  defp combine_colors(current_colors, new_colors) do
+    new_colors_map = Map.new(new_colors)
+
+    Enum.map(current_colors, fn {led_id, color} ->
+      case Map.get(new_colors_map, led_id) do
+        nil -> {led_id, color}
+        new_color -> {led_id, new_color}
+      end
+    end)
   end
 
   @impl true
@@ -144,30 +180,36 @@ defmodule RGBMatrixWeb.MatrixLive do
     {:noreply, set_effect(socket, effect_type)}
   end
 
-  def handle_event("set_layout", %{"layout" => layout}, socket) do
-    keys =
-      case layout do
-        "xebow" -> Xebow.keys()
-        "tkl" -> TKL.keys()
-        "full" -> Full.keys()
+  def handle_event("set_layout", %{"layout" => layout_name}, socket) do
+    layout =
+      case layout_name do
+        "xebow" -> Xebow.new()
+        "tkl" -> TKL.new()
+        "ctrl" -> CTRL.new()
+        "full" -> Full.new()
       end
 
     {:noreply,
      socket
-     |> set_keys(keys)
+     |> set_layout(layout)
      |> set_effect(socket.assigns.state.effect.type)}
   end
 
   def handle_event("key_pressed", %{"key-id" => id_str}, socket) do
-    {id, _} = Integer.parse(id_str)
-    led = Map.fetch!(socket.assigns.state.keys_with_leds, id).led
+    key_id = String.to_existing_atom(id_str)
 
-    state = socket.assigns.state
-    {render_in, effect} = Effect.key_pressed(state.effect, led)
-    state = schedule_next_render(state, render_in)
-    state = %State{state | effect: effect}
+    case Layout.led_for_key(socket.assigns.state.layout, key_id) do
+      nil ->
+        {:noreply, socket}
 
-    {:noreply, assign(socket, state: state)}
+      led ->
+        state = socket.assigns.state
+        {render_in, effect} = Effect.key_pressed(state.effect, led)
+        state = schedule_next_render(state, render_in)
+        state = %State{state | effect: effect}
+
+        {:noreply, assign(socket, state: state)}
+    end
   end
 
   def handle_event("update_config", %{"_target" => [field_str]} = params, socket) do

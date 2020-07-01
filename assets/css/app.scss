@@ -94,6 +94,7 @@
 
 .container {
   max-width: 120rem;
+  color: white;
 }
 
 body {
@@ -107,8 +108,13 @@ div.screen {
   height: 325px;
 }
 
-span.key {
+span.key,
+span.led {
   display: inline-block;
   position: absolute;
   border: 1px solid #222;
+}
+
+span.led {
+  border-radius: 25px;
 }

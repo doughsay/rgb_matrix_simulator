@@ -15,6 +15,7 @@
   <div class="column column-90">
     <button phx-click="set_layout" phx-value-layout="xebow">Xebow</button>
     <button phx-click="set_layout" phx-value-layout="tkl">TKL</button>
+    <button phx-click="set_layout" phx-value-layout="ctrl">CTRL</button>
     <button phx-click="set_layout" phx-value-layout="full">Full</button>
   </div>
 </div>
@@ -24,9 +25,11 @@
 <div class="screen">
   <%= for led <- @leds do %>
     <span
-      class="key"
+      class="<%= led.class %>"
+      <%= if led.class == "key" do %>
       phx-click="key_pressed"
       phx-value-key-id="<%= led.id %>"
+      <% end %>
       style="
         left: <%= led.x %>px;
         top: <%= led.y %>px;

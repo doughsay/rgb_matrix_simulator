@@ -42,13 +42,13 @@ defmodule RGBMatrix.Effect.Pinwheel do
     time = div(tick * speed, 100)
 
     colors =
-      for %LED{x: x, y: y} <- leds do
+      for %LED{id: id, x: x, y: y} <- leds do
         dx = x - center.x
         dy = y - center.y
 
         hue = mod(atan2_8(dy, dx) + time, 360)
 
-        HSV.new(hue, 100, 100)
+        {id, HSV.new(hue, 100, 100)}
       end
 
     {colors, @delay_ms, %{state | tick: tick + 1}}

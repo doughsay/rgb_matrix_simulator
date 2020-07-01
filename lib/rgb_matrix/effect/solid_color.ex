@@ -13,21 +13,21 @@ defmodule RGBMatrix.Effect.SolidColor do
   end
 
   defmodule State do
-    defstruct [:color, :led_count]
+    defstruct [:color, :led_ids]
   end
 
   @impl true
   def new(leds, _config) do
     # TODO: configurable base color
     color = HSV.new(120, 100, 100)
-    {0, %State{color: color, led_count: length(leds)}}
+    {0, %State{color: color, led_ids: Enum.map(leds, & &1.id)}}
   end
 
   @impl true
   def render(state, _config) do
-    %{color: color, led_count: led_count} = state
+    %{color: color, led_ids: led_ids} = state
 
-    colors = Enum.map(1..led_count, fn _ -> color end)
+    colors = Enum.map(led_ids, fn id -> {id, color} end)
 
     {colors, :never, state}
   end

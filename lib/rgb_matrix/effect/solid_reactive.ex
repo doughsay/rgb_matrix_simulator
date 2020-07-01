@@ -39,7 +39,7 @@ defmodule RGBMatrix.Effect.SolidReactive do
   end
 
   defmodule State do
-    defstruct [:tick, :color, :leds, :hits]
+    defstruct [:first_render, :paused, :tick, :color, :leds, :hits]
   end
 
   @delay_ms 17
@@ -48,10 +48,21 @@ defmodule RGBMatrix.Effect.SolidReactive do
   def new(leds, _config) do
     # TODO: configurable base color
     color = HSV.new(190, 100, 100)
-    {0, %State{tick: 0, color: color, leds: leds, hits: %{}}}
+    {0, %State{first_render: true, paused: false, tick: 0, color: color, leds: leds, hits: %{}}}
   end
 
   @impl true
+  def render(%{first_render: true} = state, _config) do
+    %{color: color, leds: leds} = state
+
+    colors = Enum.map(leds, &{&1.id, color})
+
+    {colors, :never, %{state | first_render: false, paused: true}}
+  end
+
+  def render(%{paused: true} = state, _config),
+    do: {[], :never, state}
+
   def render(state, config) do
     %{tick: tick, color: color, leds: leds, hits: hits} = state
     %{speed: _speed, distance: distance} = config
@@ -62,24 +73,38 @@ defmodule RGBMatrix.Effect.SolidReactive do
           %{^led => {hit_tick, direction_modifier}} ->
             # TODO: take speed into account
             if tick - hit_tick >= distance do
-              {color, Map.delete(hits, led)}
+              {{led.id, color}, Map.delete(hits, led)}
             else
               hue = mod(color.h + (tick - hit_tick - distance) * direction_modifier, 360)
-              {HSV.new(hue, color.s, color.v), hits}
+              {{led.id, HSV.new(hue, color.s, color.v)}, hits}
             end
 
           _else ->
-            {color, hits}
+            {{led.id, color}, hits}
         end
       end)
 
-    {colors, @delay_ms, %{state | tick: tick + 1, hits: hits}}
+    # FIXME: leaves color 1 away from base
+    # TODO: we can optimize this by rewriting the above instead of filtering here:
+    colors =
+      Enum.filter(colors, fn {_id, this_color} ->
+        this_color != color
+      end)
+
+    {colors, @delay_ms, %{state | tick: tick + 1, hits: hits, paused: hits == %{}}}
   end
 
   @impl true
   def key_pressed(state, config, led) do
     direction = direction_modifier(config.direction)
-    {:ignore, %{state | hits: Map.put(state.hits, led, {state.tick, direction})}}
+
+    render_in =
+      case state.paused do
+        true -> 0
+        false -> :ignore
+      end
+
+    {render_in, %{state | paused: false, hits: Map.put(state.hits, led, {state.tick, direction})}}
   end
 
   defp direction_modifier(:random), do: Enum.random([-1, 1])

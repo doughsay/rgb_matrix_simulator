@@ -4,12 +4,17 @@ defmodule RGBMatrix.LED do
   """
 
   @type t :: %__MODULE__{
+          id: atom,
           x: float,
           y: float
         }
-  defstruct [:x, :y]
+  defstruct [:id, :x, :y]
 
-  def new(x, y) do
-    struct!(__MODULE__, x: x, y: y)
+  def new(id, x, y) do
+    struct!(__MODULE__,
+      id: id,
+      x: x,
+      y: y
+    )
   end
 end
